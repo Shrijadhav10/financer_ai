@@ -1,4 +1,5 @@
 import pandas as pd
+from categorizer import categorize
 
 def load_data(file_path):
     all_sheets = pd.read_excel(file_path, sheet_name=None)
@@ -30,6 +31,10 @@ def load_data(file_path):
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
         dataframes.append(df)
+
+        # ✅ Categorize expenses
+        df['expense'] = df['expense'].str.strip().str.lower()
+        df['category'] = df['expense'].apply(categorize)
 
         for _, row in df.iterrows():
             date = row.get('date')

@@ -7,7 +7,7 @@ load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-def generate_answer(query, db, all_data):
+def generate_answer_with_memory(query, db, all_data, history=""):
     
     query_embedding = model.encode([query])
     results = db.search(query_embedding, k=50)
@@ -30,6 +30,9 @@ def generate_answer(query, db, all_data):
     DATA SUMMARY:
     {summary}
 
+    Conversation history:
+    {history}
+
     SAMPLE DATA:
     {context}
 
@@ -43,7 +46,7 @@ def generate_answer(query, db, all_data):
    
 
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
     )
 
