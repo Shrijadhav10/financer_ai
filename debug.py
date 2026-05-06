@@ -44,8 +44,8 @@ known_categories = set(CATEGORY_MAP.keys())
 
 unknown = df[~df['category'].isin(known_categories)]
 
-print("\n🚨 UNMAPPED VALUES (TOP 30)")
-print(unknown['category'].value_counts().head(30))
+print("\n🚨 UNMAPPED VALUES (TOP 50)")
+print(unknown['category'].value_counts().head(50))
 
 # -------------------------------
 # 5. TOTAL SPEND BY CATEGORY
@@ -58,7 +58,7 @@ print(df.groupby('category')['price'].sum().sort_values(ascending=False).head(20
 # -------------------------------
 print("\n🧹 POSSIBLE NOISE (LOW FREQUENCY)")
 low_freq = df['expense'].value_counts()
-print(low_freq[low_freq < 5].head(20))
+print(low_freq[low_freq < 5].head(50))
 
 # -------------------------------
 # 7. SAMPLE UNKNOWN ROWS

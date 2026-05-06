@@ -1,5 +1,8 @@
+# data_loader.py
+ 
 import pandas as pd
-from categorizer import categorize
+from categorizer import categorize, normalize
+
 
 def load_data(file_path):
     all_sheets = pd.read_excel(file_path, sheet_name=None)
@@ -14,7 +17,22 @@ def load_data(file_path):
         df.columns = df.columns.str.strip().str.lower()
 
         # Handle missing values
+        # Remove unwanted columns
+        df = df.loc[:, ~df.columns.str.contains('^unnamed')]
+
+        # --------------------------
+        # HANDLE MISSING VALUES
+        # --------------------------
         df = df.fillna('')
+
+        # --------------------------
+        # CLEAN EXPENSE COLUMN
+        # --------------------------
+        df['expense'] = df['expense'].astype(str).str.strip().str.lower()
+
+        # Remove empty expense rows
+        df = df[df['expense'] != '']
+
         # ✅ Clean price column
         df['price'] = df['price'].astype(str)  # convert everything to string first
 
@@ -29,12 +47,21 @@ def load_data(file_path):
 
         # ✅ Convert date column
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
-
-        dataframes.append(df)
+        df = df.dropna(subset=['date'])
 
         # ✅ Categorize expenses
+        # REMOVE INVALID ENTRIES
+        # --------------------------
+        invalid_values = ["august", "december", "total"]
+        df = df[~df['expense'].isin(invalid_values)]
+
+        # --------------------------
+        # APPLY NORMALIZATION + CATEGORY
+        # --------------------------
         df['expense'] = df['expense'].str.strip().str.lower()
+        df['expense'] = df['expense'].apply(normalize)
         df['category'] = df['expense'].apply(categorize)
+
 
         for _, row in df.iterrows():
             date = row.get('date')
@@ -52,6 +79,8 @@ def load_data(file_path):
 
     # print(f"\n✅ Total records loaded: {len(documents)}")
      # ✅ Combine all sheets into one dataframe
+        dataframes.append(df)
+
     full_df = pd.concat(dataframes, ignore_index=True)
 
     return documents, full_df
