@@ -1,0 +1,50 @@
+import streamlit as st
+from ai_service import generate_answer_with_memory
+
+
+
+def show_chatbot(db, all_data):
+
+    st.subheader("🤖 Finance AI Assistant")
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display messages
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+
+    query = st.chat_input("Ask about your expenses...")
+
+    if query:
+
+        st.session_state.messages.append({
+            "role": "user",
+            "content": query
+        })
+
+        with st.chat_message("user"):
+            st.write(query)
+
+        history = "\n".join([
+            f"{m['role']}: {m['content']}"
+            for m in st.session_state.messages[-5:]
+        ])
+
+        with st.chat_message("assistant"):
+            with st.spinner("Analyzing financial behavior..."):
+
+                answer = generate_answer_with_memory(
+                    query,
+                    db,
+                    all_data,
+                    history
+                )
+
+                st.write(answer)
+
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": answer
+        })
