@@ -1,22 +1,12 @@
 import streamlit as st
 
-from data_loader import load_data
+from main import setup
 from components.filters import apply_filters
 from components.charts import show_category_chart
 from components.category_drilldown import show_category_drilldown
 
-# ---------------------------
-# LOAD DATA
-# ---------------------------
-@st.cache_resource
-def setup():
-
-    documents, all_data = load_data("expense.xlsx")
-
-    return all_data
-
-
-all_data = setup()
+db, all_data = setup()
+all_data = all_data.copy()
 
 # ---------------------------
 # DATE PARTS
