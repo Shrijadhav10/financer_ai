@@ -1,5 +1,5 @@
 import streamlit as st
-from ai_service import generate_answer_with_memory
+from agents.finance_agent import run_finance_agent
 
 
 
@@ -35,10 +35,10 @@ def show_chatbot(db, all_data):
         with st.chat_message("assistant"):
             with st.spinner("Analyzing financial behavior..."):
 
-                answer = generate_answer_with_memory(
+                answer = run_finance_agent(
                     query,
-                    db,
                     all_data,
+                    db,
                     history
                 )
 

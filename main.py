@@ -1,25 +1,42 @@
+"""Shared finance setup used by the Streamlit pages and optional CLI usage."""
+
+from functools import lru_cache
+
+from ai_service import generate_answer_with_memory
+from data_curation import refresh_finance
 from data_loader import load_data
-from embedder import create_embeddings, model
-from ai_service import generate_answer
+from embedder import create_embeddings
 from rag_engine import VectorDB
-from groq import Groq
-from dotenv import load_dotenv
-import os
 
-# load_dotenv()
-# # 🔑 Add your Groq API key
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Load data
-documents, all_data = load_data("expense.xlsx")
+CURATED_FILE_PATH = r"G:\My Drive\Finanace\finance_curated.csv"
 
-# Create embeddings
-embeddings = create_embeddings(documents)
 
-# Create vector DB
-db = VectorDB(embeddings, documents)
+@lru_cache(maxsize=1)
+def setup(data_file=CURATED_FILE_PATH):
+    refresh_finance()
 
-while True:
-    query = input("👉 Ask: ")
-    answer = generate_answer(query, db, all_data)
-    print("\n💡 Answer:\n", answer)
+    documents, all_data = load_data(data_file)
+
+    embeddings = create_embeddings(documents)
+
+    db = VectorDB(embeddings, documents)
+
+    return db, all_data
+
+
+def run_cli():
+    db, all_data = setup()
+
+    while True:
+        query = input("👉 Ask: ")
+
+        if query.strip().lower() in {"exit", "quit"}:
+            break
+
+        answer = generate_answer_with_memory(query, db, all_data)
+        print("\n💡 Answer:\n", answer)
+
+
+if __name__ == "__main__":
+    run_cli()
