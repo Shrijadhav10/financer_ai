@@ -29,6 +29,28 @@ def show_monthly_trend(filtered_data):
     st.plotly_chart(fig, use_container_width=True)
 
 
+def show_yearly_trend(filtered_data):
+
+    st.subheader("📊 Yearly Spending Trend")
+
+    yearly = (
+        filtered_data
+        .groupby(filtered_data['date'].dt.year)['price']
+        .sum()
+        .reset_index()
+    )
+    yearly.columns = ['Year', 'Spend']
+
+    fig = px.bar(
+        yearly,
+        x='Year',
+        y='Spend',
+        text='Spend',
+        title='Yearly Spending by Year'
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
 def show_category_chart(filtered_data):
 
     st.subheader("📊 Category-wise Spending")

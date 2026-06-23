@@ -1,9 +1,16 @@
 import streamlit as st
 
 from main import setup
+from components.overview import show_overview
+from components.charts import (
+    show_monthly_trend,
+    show_category_chart,
+    show_yearly_trend
+)
+from components.insights import show_advisor_dashboard, show_smart_insights
 
 st.set_page_config(
-    page_title="Finance AI",
+    page_title="Finance AI Advisor",
     layout="wide"
 )
 
@@ -14,27 +21,57 @@ all_data["year"] = all_data["date"].dt.year
 all_data["month"] = all_data["date"].dt.month
 all_data["day"] = all_data["date"].dt.day
 
-st.title("💰 Personal Finance AI")
+all_data = all_data.sort_values("date")
 
-st.subheader("Home")
-st.write("This is the main Streamlit entry page. Use the sidebar to open the analysis pages.")
+total_spend = all_data["price"].sum()
+months_covered = all_data["date"].dt.to_period("M").nunique()
+avg_monthly = total_spend / months_covered if months_covered else 0
+years_covered = len(sorted(all_data["year"].unique()))
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Total records", len(all_data))
-
-with col2:
-    st.metric("Total spend", f"₹{all_data['price'].sum():,.0f}")
-
-with col3:
-    st.metric(
-        "Date range",
-        f"{all_data['date'].min().date()} to {all_data['date'].max().date()}"
-    )
-
-st.info(
-    "Pages available in the sidebar: Overview, Category Analysis, and AI Assistant."
+st.title("💼 Finance AI Advisor Dashboard")
+st.markdown(
+    "Welcome to your financial advisor dashboard — track 3 years of expenses, review category trends, and get smart recommendations in one place."
 )
 
-st.caption("The shared data setup is loaded from main.py, so all pages use the same curated dataset and vector DB.")
+# ---------------------------
+# KPI CARDS
+# ---------------------------
+metrics = st.columns(5)
+metrics[0].metric("Total Records", len(all_data))
+metrics[1].metric("Total Spend", f"₹{total_spend:,.0f}")
+metrics[2].metric("Years Covered", years_covered)
+metrics[3].metric("Avg Monthly", f"₹{round(avg_monthly, 0):,}")
+metrics[4].metric("Months Covered", months_covered)
+
+st.markdown("---")
+
+# ---------------------------
+# Advisor and overview panels
+# ---------------------------
+show_advisor_dashboard(all_data)
+
+st.markdown("---")
+
+# ---------------------------
+# Trend charts
+# ---------------------------
+trend_left, trend_right = st.columns(2)
+with trend_left:
+    show_yearly_trend(all_data)
+with trend_right:
+    show_monthly_trend(all_data)
+
+st.markdown("---")
+
+# ---------------------------
+# Category and insights
+# ---------------------------
+chart_col, insight_col = st.columns([3, 2])
+with chart_col:
+    category = show_category_chart(all_data)
+with insight_col:
+    show_smart_insights(all_data, category)
+
+st.markdown("---")
+
+st.info("Use the left sidebar to jump between Overview, Category Analysis, and AI Assistant pages.")
