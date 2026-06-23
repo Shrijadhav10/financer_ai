@@ -17,6 +17,14 @@ def show_chatbot(db, all_data):
 
     query = st.chat_input("Ask about your expenses...")
 
+    st.markdown(
+        "**Try questions like:**\n"
+        "- How much did I spend in June 2026?\n"
+        "- Which categories cost me the most?\n"
+        "- Forecast my spending for the next 6 months.\n"
+        "- How can I save more this month?"
+    )
+
     if query:
 
         st.session_state.messages.append({

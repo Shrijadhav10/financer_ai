@@ -50,6 +50,8 @@ def load_data(file_path):
     )
 
     df = df.dropna(subset=['date'])
+    df = df[df['price'] != 0]
+    df = df.reset_index(drop=True)
 
     # Normalize expense names
     df['expense'] = df['expense'].apply(normalize)
