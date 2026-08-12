@@ -1,52 +1,76 @@
+"""Load and normalize expense data."""
+
+from pathlib import Path
+
 import pandas as pd
 
+from categorizer import categorize, normalize
+
+
 def load_data(file_path):
-    all_sheets = pd.read_excel(file_path, sheet_name=None)
-    		
+    file_suffix = Path(file_path).suffix.lower()
+
+    if file_suffix in {".xlsx", ".xls", ".xlsm"}:
+        df = pd.read_excel(file_path)
+    else:
+        df = pd.read_csv(file_path)
+
     documents = []
-    dataframes = []
 
-    for sheet_name, df in all_sheets.items():
-        # print(f"Reading sheet: {sheet_name}")
+    # Normalize columns
+    df.columns = df.columns.str.strip().str.lower()
 
-        # Normalize columns
-        df.columns = df.columns.str.strip().str.lower()
+    # Remove unwanted columns
+    df = df.loc[:, ~df.columns.str.contains('^unnamed')]
 
-        # Handle missing values
-        df = df.fillna('')
-        # ✅ Clean price column
-        df['price'] = df['price'].astype(str)  # convert everything to string first
+    # Fill nulls
+    df = df.fillna('')
 
-        # Remove ₹ symbol and spaces
-        df['price'] = df['price'].str.replace('₹', '', regex=False).str.strip()
+    # Clean expense
+    df['expense'] = (
+        df['expense']
+        .astype(str)
+        .str.strip()
+        .str.lower()
+    )
 
-        # Convert to numeric
-        df['price'] = pd.to_numeric(df['price'], errors='coerce')
+    # Remove empty expense rows
+    df = df[df['expense'] != '']
 
-        # Replace NaN with 0
-        df['price'] = df['price'].fillna(0)
+    # Clean price
+    df['price'] = pd.to_numeric(
+        df['price'],
+        errors='coerce'
+    ).fillna(0)
 
-        # ✅ Convert date column
-        df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    # Convert date
+    df['date'] = pd.to_datetime(
+        df['date'],
+        errors='coerce'
+    )
 
-        dataframes.append(df)
+    df = df.dropna(subset=['date'])
+    df = df[df['price'] != 0]
+    df = df.reset_index(drop=True)
 
-        for _, row in df.iterrows():
-            date = row.get('date')
-            expense = str(row.get('expense', '')).strip().lower()
-            price = row.get('price', 0)
+    # Normalize expense names
+    df['expense'] = df['expense'].apply(normalize)
 
-            if pd.isna(date) or not expense:
-                continue
+    # Categorize
+    df['category'] = df['expense'].apply(categorize)
 
-            # Format date nicely
-            date_str = date.strftime("%d %b %Y")  # e.g., 01 Jan 2024
+    # Create RAG documents
+    for _, row in df.iterrows():
 
-            text = f"on {date_str}, spent ₹{price} on {expense}"
-            documents.append(text)
+        date_str = row['date'].strftime("%d %b %Y")
 
-    # print(f"\n✅ Total records loaded: {len(documents)}")
-     # ✅ Combine all sheets into one dataframe
-    full_df = pd.concat(dataframes, ignore_index=True)
+        text = (
+            f"on {date_str}, "
+            f"spent â‚¹{row['price']} "
+            f"on {row['expense']} "
+            f"in category {row['category']}"
+        )
 
-    return documents, full_df
+        documents.append(text)
+
+    return documents, df

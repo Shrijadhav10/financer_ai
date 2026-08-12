@@ -1,68 +1,82 @@
-from data_loader import load_data
-from embedder import create_embeddings, model
-from rag_engine import VectorDB
-from groq import Groq
-from dotenv import load_dotenv
+"""Shared finance setup used by the Streamlit pages and optional CLI usage."""
+
+import streamlit as st
+from functools import lru_cache
 import os
 
-# load_dotenv()
-# # 🔑 Add your Groq API key
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))/
+from ai_service import generate_answer_with_memory
+from data_curation import refresh_finance
+from data_loader import load_data
+from embedder import create_embeddings
+from rag_engine import VectorDB
+from utils.embedding_cache import load_embeddings_cache, save_embeddings_cache
 
-# Load data
-documents, all_data = load_data("expense.xlsx")
 
-# Create embeddings
-embeddings = create_embeddings(documents)
+CURATED_FILE_PATH = r"G:\My Drive\Finanace\finance_curated.csv"
 
-# Create vector DB
-db = VectorDB(embeddings, documents)
 
-summary = f"""
-Total records: {len(all_data)}
-Date range: {all_data['date'].min()} to {all_data['date'].max()}
-Total spend: ₹{all_data['price'].sum()}
-"""
+@st.cache_resource
+def setup(data_file=CURATED_FILE_PATH):
+    """Setup finance data with Streamlit caching for persistence."""
+    try:
+        with st.spinner("📊 Loading financial data..."):
+            refresh_finance()
 
-print("💡 RAG System Ready! Ask your questions.\n")
+        with st.spinner("📄 Processing documents..."):
+            documents, all_data = load_data(data_file)
 
-while True:
-    query = input("👉 Ask: ")
+        with st.spinner("🤖 Creating AI embeddings (this may take a minute)..."):
+            # Try to load cached embeddings first
+            embeddings = load_embeddings_cache(data_file)
+            
+            if embeddings is None:
+                # No cache, create new embeddings
+                embeddings = create_embeddings(documents)
+                # Save to cache for next time
+                save_embeddings_cache(embeddings, data_file)
+            else:
+                st.info("⚡ Using cached embeddings - much faster!")
 
-    # ✅ Convert query to embedding
-    query_embedding = model.encode([query])
+        with st.spinner("🔍 Building search index..."):
+            db = VectorDB(embeddings, documents)
 
-    # ✅ Search using embedding
-    results = db.search(query_embedding, k=50)
+        st.success("✅ Data loaded successfully!")
+        return db, all_data
+    
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        raise
 
-    context = "\n".join(results)
 
-    prompt = f"""
-You are a financial analyst.
+# Alternative setup for CLI (non-Streamlit)
+@lru_cache(maxsize=1)
+def setup_cli(data_file=CURATED_FILE_PATH):
+    """Setup for CLI usage (doesn't use Streamlit)."""
+    refresh_finance()
+    documents, all_data = load_data(data_file)
+    
+    # Try cache for CLI too
+    embeddings = load_embeddings_cache(data_file)
+    if embeddings is None:
+        embeddings = create_embeddings(documents)
+        save_embeddings_cache(embeddings, data_file)
+    
+    db = VectorDB(embeddings, documents)
+    return db, all_data
 
-IMPORTANT:
-- The dataset is complete.
-- Do NOT assume missing data.
-- Do NOT complain about data quality.
-- Answer ONLY based on given data.
 
-DATA SUMMARY:
-{summary}
+def run_cli():
+    db, all_data = setup()
 
-SAMPLE DATA:
-{context}
+    while True:
+        query = input("👉 Ask: ")
 
-Question: {query}
+        if query.strip().lower() in {"exit", "quit"}:
+            break
 
-Give:
-1. Clear insights
-2. Spending patterns
-3. Practical suggestions
-"""
+        answer = generate_answer_with_memory(query, db, all_data)
+        print("\n💡 Answer:\n", answer)
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-    )
 
-    print("\n💡 Answer:\n", response.choices[0].message.content)
+if __name__ == "__main__":
+    run_cli()
