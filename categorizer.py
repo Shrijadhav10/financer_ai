@@ -1,80 +1,327 @@
-# categorizer.py
+import re
+
 
 NORMALIZATION_MAP = {
+    # Food
     "snaks": "snacks",
     "snack": "snacks",
+    "snakas": "snacks",
+    "snkas": "snacks",
+    "snakcks": "snacks",
+
     "bannana": "banana",
+    "bannan": "banana",
+    "bsnana": "banana",
+    "banna": "banana",
+
     "cha": "tea",
     "chai": "tea",
-    "cutting": "salon",
+
     "nasta": "breakfast",
+    "brekfast": "breakfast",
+    "breakkfast": "breakfast",
+
     "veg": "vegetables",
     "vegetable": "vegetables",
-    "j1":"dinner",
-    "ganapati patti":"donation",
-    "the janata":"loan",
-    "fan":"shopping",
-    "lunch and dinner": "lunch",
-    "dinner dosa": "dinner",
+    "vegtable": "vegetables",
 
+    "vadapaav": "vadapav",
+    "vadapava": "vadapav",
+    "vadapabv": "vadapav",
+
+    "dhabha": "dhaba",
+    "desi daba": "dhaba",
+    "desi dhaba": "dhaba",
+
+    "ice-cream": "icecream",
+    "kulpi": "kulfi",
+
+    # Transport
+    "bus charges": "bus charge",
+    "buscharge": "bus charge",
+    "bus ticket": "bus",
+
+    # Rent
+    "room rent": "rent",
+    "room old rent": "rent",
+
+    # Shopping
+    "d mart": "dmart",
+
+    # Subscriptions
+    "mobile recharge": "recharge",
+
+    # Toastmasters
+    "toastmasters club": "toastmasters",
+    "toastmaster": "toastmasters",
+    "toasmasters": "toastmasters",
+    "toastmaster renew": "toastmasters",
+
+    # Donation
+    "ganapathi patti": "donation",
+    "ganesh patti": "donation",
+    "ganapati patti": "donation",
 }
 
+
 CATEGORY_MAP = {
+
     "food": [
-        "lunch", "dinner", "breakfast", "snacks", "banana", "tea",
-        "thali", "egg", "biryani", "bhel", "vadapav", "j1", "splitwise","vegetables",
-        "ice cream", "zepto", "kirani", "kachori","uta","cake","dabeli",
-        "green mart", "chapati","grocery","vada","vadapav","gobi manchuri",
-        "chokobar","pede","dhaba", "dhabha","oil","grocery","dhahi"
+        "lunch",
+        "dinner",
+        "breakfast",
+        "snacks",
+        "tea",
+        "coffee",
+        "banana",
+        "thali",
+        "egg",
+        "biryani",
+        "bhel",
+        "vadapav",
+        "vada",
+        "dabeli",
+        "pani puri",
+        "panipuri",
+        "kachori",
+        "samosa",
+        "pattice",
+        "misal",
+        "dosa",
+        "uttappa",
+        "pohe",
+        "poha",
+        "maggie",
+        "momos",
+        "gobi",
+        "chole bhature",
+        "chole bature",
+        "chapati",
+        "fries",
+        "juice",
+        "fruit",
+        "fruits",
+        "watermelon",
+        "mango",
+        "lassi",
+        "icecream",
+        "kulfi",
+        "cake",
+        "chocolate",
+        "sweet",
+        "pede",
+        "rabadi",
+        "milk",
+        "curd",
+        "dahi",
+        "dhai",
+        "paneer",
+        "oats",
+        "dal",
+        "sugarcane",
+        "sugar",
+        "oil",
+        "vegetables",
+        "grocery",
+        "groceries",
+        "kirani",
+        "kirana",
+        "green mart",
+        "greenmart",
+        "zepto",
+        "dhaba",
+        "food",
+        "hungerbox",
+        "hunger box",
     ],
+
     "transport": [
-        "bus", "bus charge", "petrol", "fuel","bus pass"
+        "bus",
+        "bus charge",
+        "bus pass",
+        "petrol",
+        "fuel",
+        "ola",
+        "uber",
+        "cab",
+        "auto",
+        "rickshaw",
+        "rikshaw",
+        "train",
+        "sleeper",
+        "parking",
+        "bike",
+        "scooty",
+        "transport",
+        "traveling",
     ],
+
     "rent": [
-        "rent", "room rent", "deposit", "room deposit & rent"
+        "rent",
+        "room rent",
+        "room expenses",
+        "room deposit",
+        "room deposit & rent",
     ],
+
     "utilities": [
-        "light bill", "gas", "gas bill", "electricity", "light",
+        "light bill",
+        "electricity",
+        "light",
+        "gas bill",
+        "gas",
+        "wifi",
+        "tv bill",
     ],
+
     "shopping": [
-        "dmart", "market", "dress","gift", "shoes",
-        "book","bag","umbrella", "mobile","watch", "shirt"
+        "dmart",
+        "market",
+        "dress",
+        "shirt",
+        "pant",
+        "t shirt",
+        "shoes",
+        "chappal",
+        "slipper",
+        "book",
+        "bag",
+        "umbrella",
+        "mobile",
+        "watch",
+        "charger",
+        "earphone",
+        "earbuds",
+        "screen guard",
+        "screenguard",
+        "thermosteel",
+        "brush",
+        "shampoo",
+        "soap",
+        "powder",
+        "colgate",
+        "stationary",
+        "stationery",
+        "home items",
+        "home expense",
+        "home use",
+        "mirror",
+        "matress",
+        "mattress",
+        "fan",
+        "pipe",
+        "cement",
+        "paint",
+        "color",
     ],
+
     "health": [
-        "hospital", "doctor", "tablet","doctor", "medical"
+        "hospital",
+        "doctor",
+        "tablet",
+        "medical",
+        "medicine",
+        "injection",
+        "dolo",
+        "ors",
+        "calcium",
+        "leg oil",
+        "moov",
     ],
+
     "investment": [
-        "sip" ,"mutual fund"
+        "sip",
+        "mutual fund",
+        "lic"
     ],
-    "loan":[
-        "home loan", "annna" , "janata", 
-        "gangadhar", "shivaraj","omkar","shivam","nikhil","pavan"
+
+    "home loan": [
+        "home loan",
+        "janata",
+        "the janata",
+        "gangadhar",
+        "gangadhara",
+        "ganadhar",
+        "shivaraj",
+        "loan",
     ],
+
     "subscriptions": [
-        "recharge", "mobile recharge", "wifi", 
+        "recharge",
+        "mobile recharge",
+        "wifi",
+        "hotstar subscription",
     ],
-    "toasmasters": [
-        "toastmasters club", "toastmasters", 
+
+    "toastmasters": [
+        "toastmasters",
+        "toastmaster",
+        "toastmasters membership",
+        "toastmaster renew",
     ],
-    "trip":[
-        "travel","fair","hampi trip","ajanta & ellora trip"
+
+    "trip": [
+        "trip",
+        "travel",
+        "hampi",
+        "dandeli",
+        "ajanta",
+        "ellora",
+        "kumarparvat",
+        "andharban",
+        "lavasa",
+        "raighad",
+        "raigad",
+        "toranhalli",
+        "torhanahalli",
+        "tornahalli",
+        "tamhini",
+        "tikona",
+        "akkalkoat",
+        "chikkamagaluru",
+        "bhimashankar",
+        "mysore",
+        "solapur",
+        "rajapur",
+        "jyothiba trip",
+        "jyothiba yatra",
+        "wari",
     ],
-    "donation":[
-        "ganapati patti","ganapathi patti", "ganesh patti"
-    ]
+
+    "donation": [
+        "donation",
+        "donate",
+        "ganapati patti",
+        "ganapathi patti",
+        "ganesh patti",
+        "donations to sikh",
+    ],
 }
 
 
 def normalize(expense):
     exp = str(expense).lower().strip()
-    return NORMALIZATION_MAP.get(exp, exp)
+
+    if exp in NORMALIZATION_MAP:
+        return NORMALIZATION_MAP[exp]
+
+    return exp
 
 
 def categorize(expense):
     exp = normalize(expense)
 
-    for category, keywords in CATEGORY_MAP.items():
-        if exp in keywords:
-            return category
+    # Ignore blank values
+    if not exp:
+        return "unrecognized"
 
-    return exp  # keep original for debugging
+    # Ignore total/month rows
+    if exp.startswith("total"):
+        return "unrecognized"
+
+    for category, keywords in CATEGORY_MAP.items():
+        for keyword in keywords:
+            if keyword in exp:
+                return category
+
+    return "unrecognized"
