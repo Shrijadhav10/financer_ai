@@ -108,31 +108,27 @@ Recent food expenses:
 
 **Response**:
 ```
-**Purchase Analysis: Item Price ₹269000**
+Purchase Analysis: Item Price ₹269000
 
-**Your Spending Profile:**
-- Average monthly spend: ₹6667
-- Total historical spend: ₹20000
-- Spending is stable
+Your Spending Profile:
 
-**Affordability Check (2 months to save until August 2026):**
-- Monthly savings needed: ₹134500
-- Your current monthly surplus: ₹-127833
+Average monthly spend: ₹25029
+Total historical spend: ₹1076252
+Spending is increasing, changing by about ₹815.46 per month over the last 6 months.
+Affordability Check (1 month to save):
 
-**Recommendation:**
-❌ **Currently tight.** You'd need to save ₹134500/month, but currently 
-spend ₹6667/month on average. This would require significant lifestyle changes.
+Monthly savings needed: ₹269000
+Your current monthly surplus: ₹-243970
+Recommendation: ❌ Currently tight. You'd need to save ₹269000/month, but currently spend ₹25029/month. You can afford it in about 11 months if you:
 
-**Timeline to Afford:**
-At your current spending rate, you can afford this bike in ~40 months 
-if you save 100% of remaining budget after essential expenses.
+Cut unnecessary expenses by ₹243970/month
+Redirect that towards savings
+Or wait 11 months and buy from regular savings
+Action Steps:
 
-**Action Steps:**
-1. **Track spending** - Know exactly where money goes
-2. **Cut unnecessary expenses** - Target entertainment and dining
-3. **Redirect savings** - Auto-transfer to savings account
-4. **Review monthly** - Adjust budget based on progress
-5. **Consider alternatives** - Lower price point or later date
+Track discretionary spending (dining out, entertainment)
+Set automatic savings of ₹269000 per month
+Monitor progress monthly
 ```
 
 ---
