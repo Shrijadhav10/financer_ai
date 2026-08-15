@@ -124,4 +124,12 @@ def run_cli():
 
 
 if __name__ == "__main__":
-    run_cli()
+    # `streamlit run main.py` is the primary application entry point.
+    # The CLI remains available via: python main.py --cli
+    import sys
+
+    if "--cli" in sys.argv:
+        run_cli()
+    else:
+        from financer_dashboard import main as run_dashboard
+        run_dashboard()

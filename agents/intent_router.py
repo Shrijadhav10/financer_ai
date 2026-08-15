@@ -37,6 +37,7 @@ VALID_INTENTS = [
     "FORECAST",
     "TOP_CATEGORY_SPEND",
     "CATEGORY_SPEND",
+    "ITEM_SPEND",
     "SAVINGS",
     "OVESPENDING",
     "DATE_QUERY",   # internal-only label; resolved to DATE_SPEND/MONTHLY_SPEND below
@@ -57,6 +58,7 @@ TOTAL_SPEND - asking for their all-time total spending, with no specific month/c
 FORECAST - asking to predict/forecast future spending
 TOP_CATEGORY_SPEND - asking which category/categories they spend the most on, or for a ranked breakdown by category
 CATEGORY_SPEND - asking specifically about food spending
+ITEM_SPEND - asking about spending on a specific item/product (e.g. "athithi", "banana", "ola", "gym", etc.) that is not a category
 SAVINGS - asking how to save money or for savings suggestions (not asking to forecast or buy something)
 OVESPENDING - asking about overspending or where they are overspending
 DATE_QUERY - asking about spending on a specific date, day, month, or time period (e.g. "June 2026", "last month", "yesterday")
@@ -66,6 +68,7 @@ Rules:
 - If the query mentions buying/affording a specific priced item, always choose PURCHASE_ADVICE, even if it also mentions saving or a date.
 - If the query asks "which/where/what category do I spend most on", choose TOP_CATEGORY_SPEND even if "food" is also mentioned.
 - Only choose CATEGORY_SPEND if food is the clear subject and no ranking ("top", "which", "most") is being asked for.
+- Only choose ITEM_SPEND if asking about a specific product/item name (like a restaurant, food item, app, etc.), NOT a category.
 - If uncertain, prefer RAG over guessing a structured intent.
 
 User query: "{query}"
