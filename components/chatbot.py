@@ -21,8 +21,14 @@ def show_chatbot(db, all_data):
         "**Try questions like:**\n"
         "- How much did I spend in June 2026?\n"
         "- Which categories cost me the most?\n"
+        "- How much did I spend on athithi?\n"
+        "- **When did I spend on athithi?** (shows transaction dates)\n"
+        "- List all ola transactions with dates\n"
         "- Forecast my spending for the next 6 months.\n"
-        "- How can I save more this month?"
+        "- How can I save more this month?\n\n"
+        "**💡 Pro Tip: Add 'use llm' to any question to get AI-powered answers (bypasses structured queries)**\n"
+        "- Example: 'Use llm - analyze my food spending patterns'\n"
+        "- Example: 'Use AI - give me insights about my transport costs'"
     )
 
     if query:
