@@ -274,5 +274,5 @@ For issues, questions, or suggestions:
 3. Test with sample data provided
 
 ## 👨‍💻 Author
-
+Shrinath Jadhav - AI Data Engineer
 Built with ❤️ for smarter personal finance management

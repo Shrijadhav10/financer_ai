@@ -16,8 +16,13 @@ st.info("""
 Ask questions like:
 - Where do I spend the most?
 - How much did I spend on food?
+- How much did I spend on athithi?
 - Which month was expensive?
 - How can I save money?
+
+💡 **Pro Tip:** Add "use llm" or "use ai" to any question to get AI-powered insights!
+- Example: "Use llm - analyze my spending patterns"
+- Example: "Use ai - give insights on my food spending"
 """)
 
 # ---------------------------

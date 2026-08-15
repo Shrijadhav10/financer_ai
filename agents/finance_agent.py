@@ -10,6 +10,8 @@ from tools.expense_tools import (
     get_total_spend,
     get_category_spend,
     get_top_categories,
+    get_item_spend,
+    get_item_spend_detailed,
 )
 
 from tools.analytics_tools import (
@@ -24,6 +26,30 @@ from ai_service import generate_answer_with_memory
 
 
 def run_finance_agent(query, df, db, history):
+    # Check if user wants to use LLM directly
+    use_llm_keywords = ["use llm", "use ai", "llm", "ask ai", "ai answer"]
+    should_use_llm = any(keyword in query.lower() for keyword in use_llm_keywords)
+    
+    if should_use_llm:
+        # Skip intent routing and go directly to LLM
+        month, year, day = extract_date_filter(query)
+        filtered_df = filter_by_date(df, month, year, day)
+        # Remove the "use llm" keyword from the query before sending to LLM
+        cleaned_query = query.lower()
+        for keyword in use_llm_keywords:
+            cleaned_query = cleaned_query.replace(keyword, "").strip()
+        
+        response = generate_answer_with_memory(
+            cleaned_query if cleaned_query else query, 
+            db, 
+            filtered_df, 
+            history, 
+            month, 
+            year, 
+            day
+        )
+        return response
+    
     intent = detect_intent(query)
 
     if intent == "TOTAL_SPEND":
@@ -57,6 +83,98 @@ def run_finance_agent(query, df, db, history):
     elif intent == "CATEGORY_SPEND":
         food_spend = get_category_spend(df, "food")
         return f"Your food spending is ₹{food_spend}"
+
+    elif intent == "ITEM_SPEND":
+        import re
+        # Extract item name from query
+        # Try to find quoted text first
+        quoted_match = re.search(r'["\']([^"\']+)["\']', query)
+        item_name = quoted_match.group(1) if quoted_match else None
+        
+        # If no quotes, try to extract common patterns like "on X", "for X", "spent on X"
+        if not item_name:
+            patterns = [
+                r'spent on (\w+)',
+                r'spent on ([^\?\.\!]+?)(?:\?|$)',
+                r'on (\w+)',
+                r'for (\w+)',
+                r'how much.*?(\w+)',
+                r'how much.*?(\w[\w\s]*)',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, query.lower())
+                if match:
+                    item_name = match.group(1).strip()
+                    break
+        
+        if not item_name:
+            # Try to use context from history if available
+            if history and "on " in query.lower():
+                return "I couldn't identify which item you're asking about. Try asking like: 'How much did I spend on athithi?' or 'What's my spending on banana?'"
+            return "I couldn't identify which item you're asking about. Try asking like: 'How much did I spend on athithi?' or 'What's my spending on banana?'"
+        
+        month, year, day = extract_date_filter(query)
+        
+        # If no date in current query, try to extract from history context
+        if month is None and year is None and history:
+            # Look for date references in recent history
+            if "june" in history.lower() and "2026" in history.lower():
+                month, year = 6, 2026
+            elif "last month" in history.lower():
+                from datetime import datetime, timedelta
+                today = datetime.now()
+                last_month = today - timedelta(days=30)
+                month, year = last_month.month, last_month.year
+        
+        filtered_df = filter_by_date(df, month, year, day)
+        
+        # Check if user is asking for dates/details
+        asking_for_dates = any(keyword in query.lower() for keyword in [
+            "when", "date", "dates", "which date", "on what date", 
+            "specific date", "all dates", "list", "transactions", "details", "breakdown"
+        ])
+        
+        if asking_for_dates:
+            # Use detailed transaction data
+            item_data = get_item_spend_detailed(filtered_df, item_name)
+            
+            if not item_data:
+                date_period = get_day_month_year_text(month, year, day) if day else (get_month_year_text(month, year) if month else "overall")
+                return f"No spending found for '{item_name}' {date_period}."
+            
+            date_period = get_day_month_year_text(month, year, day) if day else (get_month_year_text(month, year) if month else "overall")
+            
+            response = f"**Detailed Spending on '{item_name.title()}' ({date_period}):**\n\n"
+            response += f"📊 **Summary:**\n"
+            response += f"- Total: ₹{item_data['total']}\n"
+            response += f"- Transactions: {item_data['count']}\n"
+            response += f"- Average per transaction: ₹{item_data['average']}\n\n"
+            
+            response += f"📋 **Transaction Details:**\n"
+            for i, txn in enumerate(item_data['transactions'], 1):
+                date_str = txn['date'].strftime('%d-%b-%Y') if hasattr(txn['date'], 'strftime') else str(txn['date'])
+                response += f"\n{i}. **{date_str}** - ₹{txn['amount']} ({txn['expense']})"
+            
+            return response
+        else:
+            # Use summary data (faster)
+            item_data = get_item_spend(filtered_df, item_name)
+            
+            if item_data["count"] == 0:
+                date_period = get_day_month_year_text(month, year, day) if day else (get_month_year_text(month, year) if month else "overall")
+                return f"No spending found for '{item_name}' {date_period}."
+            
+            date_period = get_day_month_year_text(month, year, day) if day else (get_month_year_text(month, year) if month else "overall")
+            
+            response = f"**Spending on '{item_name.title()}' ({date_period}):**\n\n"
+            response += f"- Total: ₹{item_data['total']}\n"
+            response += f"- Transactions: {item_data['count']}\n"
+            response += f"- Average per transaction: ₹{item_data['average']}"
+            
+            if item_data['count'] > 0:
+                response += f"\n\n💡 _Tip: Ask 'When did I spend on {item_name}?' for dates_"
+            
+            return response
 
     elif intent == "TOP_CATEGORY_SPEND":
         month, year, day = extract_date_filter(query)
