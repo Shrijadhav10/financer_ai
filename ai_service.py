@@ -1,12 +1,12 @@
 from groq import Groq
 from embedder import model
-import os
 from dotenv import load_dotenv
 from datetime import datetime
+from utils.deployment import get_secret
 
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(api_key=get_secret("GROQ_API_KEY"))
 
 
 def _document_matches_period(doc, month, year, day=None):

@@ -18,15 +18,15 @@ query" is a parsing problem the regex already solves reliably -- asking an
 LLM to do date extraction would be a downgrade, not an improvement.
 """
 
-import os
 from groq import Groq
 from dotenv import load_dotenv
 
 from utils.date_extractor import extract_date_filter
+from utils.deployment import get_secret
 
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(api_key=get_secret("GROQ_API_KEY"))
 
 # Every label finance_agent.py's if/elif chain checks for. Keep this list
 # and finance_agent.py's checks in sync if either one changes.

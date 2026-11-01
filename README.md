@@ -83,6 +83,32 @@ streamlit run app.py
 
 The app will launch at `http://localhost:8501`
 
+### Deploy for access from anywhere
+
+The app can be hosted on [Streamlit Community Cloud](https://share.streamlit.io/) and opened from other devices.
+
+1. Push the code to GitHub and create an app from this repository, selecting the `deployment/streamlit-cloud` branch and `app.py`.
+2. In **Advanced settings**, choose Python 3.11 to match the pinned `faiss-cpu` and NumPy dependencies.
+3. Create a Google Cloud service account, enable the Google Drive API, and share your `expense.xlsx` file with the service account's email as a Viewer.
+4. In the Streamlit app's **Secrets** settings, add the Groq key and Drive service account details. Use the Drive file ID from the file's URL:
+
+```toml
+GROQ_API_KEY = "your_groq_api_key"
+
+[google_drive]
+file_id = "your_google_drive_file_id"
+
+[google_drive.service_account]
+type = "service_account"
+project_id = "your_project_id"
+private_key_id = "your_private_key_id"
+private_key = "-----BEGIN PRIVATE KEY-----\nPASTE_KEY_CONTENT_HERE\n-----END PRIVATE KEY-----\n"
+client_email = "your-service-account@your-project.iam.gserviceaccount.com"
+token_uri = "https://oauth2.googleapis.com/token"
+```
+
+Never commit these values or a service-account JSON file. In Streamlit Community Cloud, set the app's sharing mode to **Only specific people can view this app** and invite only your account. The app reads the spreadsheet using read-only Drive access; restart the app after changing the spreadsheet to reload its data. The source code repository remains public, so do not add personal financial files or secrets to it.
+
 ## 📁 Project Structure
 
 ```

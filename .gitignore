@@ -1,5 +1,11 @@
 venv/
 .env
 _pycache__/
+__pycache__/
 *.pyc
 *.pkl
+credentials.json
+token.json
+.streamlit/secrets.toml
+expense.xlsx
+finance_curated.csv

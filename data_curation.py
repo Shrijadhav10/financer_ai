@@ -1,14 +1,16 @@
 import pandas as pd
 from datetime import datetime
 import calendar
+from pathlib import Path
 
 # ==========================
 # CONFIGURATION
 # ==========================
-def refresh_finance():
+def refresh_finance(
+    input_file=r"G:\My Drive\Finanace\expense.xlsx",
+    output_file=r"G:\My Drive\Finanace\finance_curated.csv",
+):
     # all your existing code here
-    INPUT_FILE = r"G:\My Drive\Finanace\expense.xlsx"
-    OUTPUT_FILE = r"G:\My Drive\Finanace\finance_curated.csv"
 
     MONTHS = [m.lower() for m in calendar.month_name if m]
 
@@ -26,9 +28,10 @@ def refresh_finance():
 
     all_records = []
 
-    excel = pd.ExcelFile(INPUT_FILE)
+    with pd.ExcelFile(input_file) as excel:
+        sheet_names = excel.sheet_names
 
-    for sheet_name in excel.sheet_names:
+    for sheet_name in sheet_names:
 
         if sheet_name.strip().lower() == "budget":
             print(f"Skipping sheet: {sheet_name}")
@@ -39,7 +42,7 @@ def refresh_finance():
         year = int(sheet_name)
 
         df = pd.read_excel(
-            INPUT_FILE,
+            input_file,
             sheet_name=sheet_name,
             header=None
         )
@@ -134,14 +137,12 @@ def refresh_finance():
         by=["Year", "Date"]
     )
 
-    curated_df.to_csv(
-        OUTPUT_FILE,
-        index=False
-    )
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    curated_df.to_csv(output_file, index=False)
 
     print("\nDone!")
     print(f"Records created: {len(curated_df)}")
-    print(f"Saved to: {OUTPUT_FILE}")
+    print(f"Saved to: {output_file}")
 
     print("\nSample Data:")
     print(curated_df.head())

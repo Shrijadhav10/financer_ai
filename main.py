@@ -3,7 +3,7 @@
 import streamlit as st
 from functools import lru_cache
 from pathlib import Path
-import os
+import tempfile
 
 from ai_service import generate_answer_with_memory
 from data_curation import refresh_finance
@@ -11,6 +11,8 @@ from data_loader import load_data
 from embedder import create_embeddings
 from rag_engine import VectorDB
 from utils.embedding_cache import load_embeddings_cache, save_embeddings_cache
+from utils.deployment import get_secret_section
+from utils.google_drive import download_drive_file
 
 
 CURATED_FILE_PATH = r"G:\My Drive\Finanace\finance_curated.csv"
@@ -33,10 +35,15 @@ def _file_state(data_file):
 
 
 @st.cache_resource
-def _setup_cached(data_file=CURATED_FILE_PATH, _file_state_signal=None):
+def _setup_cached(
+    data_file=CURATED_FILE_PATH,
+    file_state_signal=None,
+    drive_file_id=None,
+    _service_account_info=None,
+):
     """Setup finance data with Streamlit caching for persistence.
 
-    _file_state_signal is not used inside the function body — its only
+    file_state_signal is not used inside the function body — its only
     job is to be part of the cache key, so that st.cache_resource treats
     a changed file as a fresh call rather than returning the old cached
     (db, all_data) forever. Call setup() below, not this function
@@ -44,7 +51,26 @@ def _setup_cached(data_file=CURATED_FILE_PATH, _file_state_signal=None):
     """
     try:
         with st.spinner("📊 Loading financial data..."):
-            refresh_finance()
+            if drive_file_id:
+                if not _service_account_info:
+                    raise RuntimeError(
+                        "Google Drive service-account credentials are missing. "
+                        "Configure them in Streamlit secrets."
+                    )
+
+                data_path = Path(data_file)
+                source_path = data_path.with_name("expense.xlsx")
+                download_drive_file(
+                    drive_file_id,
+                    _service_account_info,
+                    source_path,
+                )
+                refresh_finance(
+                    input_file=str(source_path),
+                    output_file=str(data_path),
+                )
+            else:
+                refresh_finance()
 
         with st.spinner("📄 Processing documents..."):
             documents, all_data = load_data(data_file)
@@ -88,7 +114,39 @@ def setup(data_file=CURATED_FILE_PATH):
     underlying file has changed and reruns setup instead of returning a
     stale (db, all_data) from earlier in the app's lifetime.
     """
-    return _setup_cached(data_file, _file_state_signal=_file_state(data_file))
+    drive_settings = get_secret_section("google_drive")
+    if drive_settings is not None:
+        drive_file_id = drive_settings.get("file_id")
+        service_account_info = drive_settings.get("service_account")
+        if not drive_file_id or not service_account_info:
+            raise RuntimeError(
+                "Configure google_drive.file_id and "
+                "google_drive.service_account in Streamlit secrets."
+            )
+
+        data_path = (
+            Path(tempfile.gettempdir())
+            / "financer_ai"
+            / "finance_curated.csv"
+        )
+        cache_signal = f"drive:{drive_file_id}"
+        return _setup_cached(
+            str(data_path),
+            cache_signal,
+            drive_file_id=drive_file_id,
+            _service_account_info=dict(service_account_info),
+        )
+
+    if not Path(r"G:\My Drive\Finanace\expense.xlsx").exists():
+        raise RuntimeError(
+            "Google Drive secrets are required when the local G: drive "
+            "source file is unavailable."
+        )
+
+    return _setup_cached(
+        data_file,
+        file_state_signal=_file_state(data_file),
+    )
 
 
 # Alternative setup for CLI (non-Streamlit)
